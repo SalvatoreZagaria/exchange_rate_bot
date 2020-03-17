@@ -43,11 +43,7 @@ class ExchangeRateMonitor:
     def process_rates(self):
         gbp_eur = self.get_rates()
 
-        if gbp_eur is None:
-            print("[!] {} RATES NOT FOUND".format(datetime.datetime.now()))
-            return
-
-        print(gbp_eur)
+        return gbp_eur
 
 
 if __name__ == "__main__":
