@@ -83,7 +83,7 @@ def set_interval(update, context):
             monitor_thread.stop()
             run = True
 
-        INTERVAL = new_interval
+        INTERVAL = new_interval * 60
         msg = "Interval updated to {}".format(INTERVAL)
         update.message.reply_text(msg)
         monitor_thread = MonitorThread(0)
@@ -99,7 +99,7 @@ def helper(update, context):
     
 /start - start to receive messages
 /stop - stop to receive messages
-/set_interval - update the interval between the messages
+/set_interval - update the interval between the messages (minutes)
 /get_one - get just one message now
 /help - this helper"""
 
