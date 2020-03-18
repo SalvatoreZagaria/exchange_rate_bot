@@ -1,8 +1,6 @@
-import os
-from selenium import webdriver
+from bs4 import BeautifulSoup
 import sys
-import datetime
-import time
+import urllib.request
 
 
 WEBSITE = "https://www.x-rates.com/table/?from=GBP&amount=1"
@@ -11,21 +9,11 @@ WEBSITE = "https://www.x-rates.com/table/?from=GBP&amount=1"
 class ExchangeRateMonitor:
     def __init__(self, url):
         self.url = url
-        self.chrome_driver_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "chromedriver.exe"
-        )
-        self.options = webdriver.ChromeOptions()
-        self.options.add_argument("window-size=1600x900")
-        self.options.add_argument("headless")
-        self.driver = webdriver.Chrome(options=self.options)
-        self.table_xpath = "//table[@class='ratesTable']"
 
-    def close(self):
-        self.driver.quit()
-
-    def get_single_rate(self, table_rows):
-        for tr in table_rows.find_elements_by_xpath(".//tr"):
-            row = [i.text for i in tr.find_elements_by_xpath(".//td")]
+    def get_single_rate(self, table):
+        tbody = table.find("tbody")
+        for tr in tbody.find_all("tr"):
+            row = [i.text for i in tr.find_all("td")]
             try:
                 if row[0] == "Euro":
                     return float(row[1])
@@ -34,9 +22,10 @@ class ExchangeRateMonitor:
         return None
 
     def get_rates(self):
-        self.driver.get(self.url)
-        table_rows = self.driver.find_elements_by_xpath(self.table_xpath)[0]
-        gbp_eur = self.get_single_rate(table_rows)
+        page = urllib.request.urlopen(self.url)
+        tree = BeautifulSoup(page, "html.parser")
+        table = tree.find_all("table")[0]
+        gbp_eur = self.get_single_rate(table)
 
         return gbp_eur
 
@@ -49,9 +38,7 @@ class ExchangeRateMonitor:
 if __name__ == "__main__":
     try:
         monitor = ExchangeRateMonitor(WEBSITE)
-        monitor.process_rates()
-        monitor.close()
+        print(monitor.process_rates())
     except Exception as e:
         print("Aborted")
-        monitor.close()
         sys.exit(e)

@@ -1,3 +1,4 @@
+import os
 import time
 import datetime
 import threading
@@ -5,9 +6,9 @@ from telegram.ext import Updater, CommandHandler
 
 from monitor import ExchangeRateMonitor, WEBSITE
 
-TOKEN = "1016492835:AAHNmciDOnpjMMKyl2BwPU3p_nAUGbPgMeg"  # os.environ["EXC_RATE_TOKEN"]
+TOKEN = os.environ["EXC_RATE_TOKEN"]
 monitor_thread = None
-INTERVAL = 60
+INTERVAL = 3600
 
 
 class MonitorThread(threading.Thread):
