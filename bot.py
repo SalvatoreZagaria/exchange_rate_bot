@@ -77,7 +77,7 @@ def stop(update, context):
     monitor_thread.stop()
     monitor_threads[user_id] = None
 
-    update.message.reply_text("Retrieving...")
+    update.message.reply_text("Stopped.")
 
 
 def set_interval(update, context):
