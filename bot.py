@@ -41,6 +41,8 @@ class MonitorThread(threading.Thread):
 
 
 def get_one(update, context):
+    update.message.reply_text("Retrieving...")
+
     exc_rate_monitor = ExchangeRateMonitor(WEBSITE)
 
     gbp_eur = exc_rate_monitor.process_rates()
@@ -54,6 +56,8 @@ def get_one(update, context):
 
 
 def start(update, context):
+    update.message.reply_text("Retrieving...")
+
     user_id = update.effective_user.id
     monitor_thread = monitor_threads.get(user_id, None)
     if monitor_thread is not None and monitor_thread.running:
@@ -72,6 +76,8 @@ def stop(update, context):
         return
     monitor_thread.stop()
     monitor_threads[user_id] = None
+
+    update.message.reply_text("Retrieving...")
 
 
 def set_interval(update, context):
@@ -100,6 +106,7 @@ def set_interval(update, context):
         msg = "Interval updated to {}".format(new_interval)
         update.message.reply_text(msg)
         if run:
+            update.message.reply_text("Retrieving...")
             monitor_thread.start()
 
         monitor_threads[user_id] = monitor_thread
