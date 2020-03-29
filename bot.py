@@ -1,5 +1,6 @@
 import os
 import time
+import pickle
 import datetime
 import threading
 from telegram.ext import Updater, CommandHandler
@@ -8,6 +9,8 @@ from monitor import ExchangeRateMonitor, WEBSITE
 
 TOKEN = os.environ["EXC_RATE_TOKEN"]
 CURRENT_VALUE = "No results found."
+pickle_general = "users_info.pickle"
+pickle_intervals = "users_intervals.pickle"
 
 
 class MonitorThread(threading.Thread):
@@ -57,6 +60,7 @@ MAIN_THREAD = MonitorThread()
 MAIN_THREAD.start()
 
 sender_threads = {}
+intervals = {}
 
 
 def get_one(update, context):
@@ -70,7 +74,11 @@ def start(update, context):
     if sender_thread is not None and sender_thread.running:
         update.message.reply_text("Bot is running already.")
         return
-    sender_thread = SenderThread(update)
+    interval = intervals.get(user_id, None)
+    if interval is None:
+        sender_thread = SenderThread(update)
+    else:
+        sender_thread = SenderThread(update, interval=interval)
     sender_thread.start()
     sender_threads[user_id] = sender_thread
 
@@ -117,6 +125,7 @@ def set_interval(update, context):
             sender_thread.start()
 
         sender_threads[user_id] = sender_thread
+        intervals[user_id] = new_interval
     except ValueError:
         update.message.reply_text("Impossible to convert argument to integer.")
 
@@ -133,7 +142,31 @@ def helper(update, context):
     update.message.reply_text(msg)
 
 
+def initialize_global_dict():
+    global intervals
+    global sender_threads
+
+    if os.path.exists(pickle_intervals):
+        with open(pickle_intervals, "rb") as handle:
+            intervals = pickle.load(handle)
+
+    if os.path.exists(pickle_general):
+        with open(pickle_general, 'rb') as handle:
+            users_info = pickle.load(handle)
+
+        for user_id, objects in users_info.items():
+            updater = objects[0]
+            interval = objects[1]
+            running = objects[2]
+            if running:
+                sender = SenderThread(updater, interval=interval)
+                sender.send_message("Bot is running...")
+                sender.run()
+                sender_threads[user_id] = sender
+
+
 def main():
+    initialize_global_dict()
     updater = Updater(TOKEN, use_context=True)
 
     dp = updater.dispatcher
@@ -153,7 +186,12 @@ if __name__ == "__main__":
         main()
         print("Bot is running...")
     except:
+        users_info = {}
+        for user_id, senders in sender_threads.items():
+            users_info[user_id] = (senders.updater, senders.interval, senders.running)
+
+        for file_name in (pickle_general, pickle_intervals):
+            with open(file_name, 'wb') as handle:
+                pickle.dump(users_info, handle, protocol=pickle.HIGHEST_PROTOCOL)
         shutting_down = "Bot is shutting down."
-        for th in sender_threads.values():
-            th.send_message(shutting_down)
         print(shutting_down)
